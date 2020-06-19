@@ -10,6 +10,7 @@ module Text.Parsing.Combinators.Validation
   , right
   , just
   , nothing
+  , apply
   ) where
 
 import Prelude
@@ -23,6 +24,9 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
+
+import Data.Traversable (class Traversable)
+import Data.Traversable as T
 
 import Text.Parsing.Parser (ParserT)
 import Text.Parsing.Parser as P
@@ -148,3 +152,15 @@ just (Just x)   = pure x
 nothing :: forall a m b. Monad m => (Maybe b) -> ParserT a m Unit
 nothing (Just _)  = P.fail $ "Validation failure: expected nothing result."
 nothing (Nothing) = pure unit
+
+-- | Fails if a result of running a parser `p` against each value of a container produced by a parser `q` is unsuccessful.
+-- | Does not consume the remaining parse input. 
+apply :: forall a m f b c. Monad m => Traversable m => Applicative f => Traversable f => ParserT a m c -> ParserT b m (f a) -> ParserT b m (f c)
+apply p q = do
+   u <- C.lookAhead $ q 
+   v <- pure (flip P.runParserT p <$> u)
+   w <- pure $ T.sequence v
+   x <- lift w
+   y <- pure $ T.sequence x
+   z <- right y
+   pure z
