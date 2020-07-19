@@ -102,14 +102,14 @@ right (Right x) = pure x
 
 -- | Lifts the remaining parse input for validation purposes.
 -- | Does not consume the remaining parse input.
-getInput :: forall a m. Monad m => ParserT a m a
-getInput = S.gets \(P.ParseState x _ _) -> x
+input :: forall a m. Monad m => ParserT a m a
+input = S.gets \(P.ParseState x _ _) -> x
 
 -- | Runs a parser `p` against the remaining parse input for validation purposes.
 -- | Does not consume the remaining parse input.
-input :: forall a m b. Monad m => ParserT a m b -> ParserT a m b
-input = \p -> do
-  w <- getInput
+test :: forall a m b. Monad m => ParserT a m b -> ParserT a m b
+test = \p -> do
+  w <- input
   x <- pure $ P.runParserT w p
   y <- lift x
   z <- right y
@@ -119,7 +119,7 @@ input = \p -> do
 -- | Does not consume the remaining parse input.
 output :: forall a m b c. Monad m => ParserT a m b -> ParserT b m c -> ParserT a m c
 output = \p q -> do
-  w <- input p
+  w <- test p
   x <- pure $ P.runParserT w q
   y <- lift x
   z <- right y
@@ -154,10 +154,10 @@ nothing (Just _)  = P.fail $ "Validation failure: expected nothing result."
 nothing (Nothing) = pure unit
 
 -- | Fails if a result of running a parser `p` against each value of a container produced by a parser `q` is unsuccessful.
--- | Does not consume the remaining parse input. 
+-- | Does not consume the remaining parse input.
 apply :: forall a m f b c. Monad m => Traversable m => Applicative f => Traversable f => ParserT a m c -> ParserT b m (f a) -> ParserT b m (f c)
 apply p q = do
-   u <- C.lookAhead $ q 
+   u <- C.lookAhead $ q
    v <- pure (flip P.runParserT p <$> u)
    w <- pure $ T.sequence v
    x <- lift w
