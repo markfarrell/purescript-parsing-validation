@@ -6,4 +6,6 @@ You can edit this file as you like.
 , dependencies = [ "console", "effect", "parsing", "prelude", "psci-support" ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, license = "MIT"
+, repository = "https://github.com/markfarrell/purescript-parsing-validation.git"
 }
